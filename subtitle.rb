@@ -8,15 +8,35 @@ require 'zip/zipfilesystem'
 
 def imdb_movie(imdb_code)
   doc = Nokogiri::HTML(open("https://www.yifysubtitles.com/movie-imdb/" + imdb_code))
+  downloaded = false
   puts "Loaded page"
+
   doc.css(".table tr.high-rating").each_with_index do |table_row, table_row_index|
     # puts table_row.css('flag').to_s
     if table_row.css('.flag').first['class'].include?('flag-gb')
       puts "Found english sub with rating: #{table_row.css('.rating-cell span').text}"
       download_zip("https://www.yifysubtitles.com" + table_row.css('.download-cell a').first['href'])
+      downloaded = true
+      break
     end
-        
   end
+
+  if !downloaded
+
+    puts "No high rated subtitle found, getting the best one now"
+
+    doc.css(".table tr[data-id]").each_with_index do |table_row, table_row_index|
+      if table_row.css('.flag').first['class'].include?('flag-gb')
+        puts "Found english sub with rating: #{table_row.css('.rating-cell span').text}"
+        download_zip("https://www.yifysubtitles.com" + table_row.css('.download-cell a').first['href'])
+        downloaded = true
+        break
+      end
+    end
+
+
+  end
+
 end
 
 def download_zip(link)
