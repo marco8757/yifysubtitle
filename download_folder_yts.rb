@@ -22,9 +22,13 @@ def get_imdb_id(folder_name)
 
   parsed_json = JSON.parse(json_result)
 
-  if parsed_json['Search'][0].any?
+
+  if parsed_json['Response'] != 'False' && parsed_json['Search'][0].any?
     imdb_movie(parsed_json['Search'][0]['imdbID'], folder_name)
     # puts parsed_json['Search'][0]['imdbID']
+  else
+    puts "Can't find subtitle for #{folder_name}"
+    puts "Error: #{parsed_json}"
   end
 
 
