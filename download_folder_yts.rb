@@ -3,11 +3,15 @@ require 'open-uri'
 require 'net/http'
 require 'fileutils'
 require 'json'
-require 'zip/zipfilesystem'
+require 'zip/zip'
+
+# global variable for subtitle site base url
+$SUBS_BASE_DOMAIN = 'https://yifysubtitles.org'
 
 def get_all_movie_folder
   folder_name = Dir.entries(ENV['DOWNLOAD_FOLDER']).select {|entry| File.directory? File.join(ENV['DOWNLOAD_FOLDER'],entry) and !(entry =='.' || entry == '..') && entry.include?('YTS')}
   
+  puts folder_name
   folder_name.each do |folder|
     get_imdb_id(folder) if (Dir.open(ENV['DOWNLOAD_FOLDER'] + folder).entries.select {|entry| File.join('.',entry) and entry.end_with?('.srt')}).empty?
   end
@@ -36,7 +40,7 @@ end
 
 
 def imdb_movie(imdb_code, folder_name)
-  doc = Nokogiri::HTML(open("https://www.yifysubtitles.com/movie-imdb/" + imdb_code))
+  doc = Nokogiri::HTML(open("#{$SUBS_BASE_DOMAIN}/movie-imdb/" + imdb_code))
   downloaded = false
   puts "Loaded page"
 
@@ -44,7 +48,7 @@ def imdb_movie(imdb_code, folder_name)
     # puts table_row.css('flag').to_s
     if table_row.css('.flag').first['class'].include?('flag-gb')
       puts "Found english sub with rating: #{table_row.css('.rating-cell span').text}"
-      download_zip("https://www.yifysubtitles.com" + table_row.css('.download-cell a').first['href'], folder_name)
+      download_zip("#{$SUBS_BASE_DOMAIN}" + table_row.css('.download-cell a').first['href'], folder_name)
       downloaded = true
       break
     end
@@ -57,7 +61,7 @@ def imdb_movie(imdb_code, folder_name)
     doc.css(".table tr[data-id]").each_with_index do |table_row, table_row_index|
       if table_row.css('.flag').first['class'].include?('flag-gb')
         puts "Found english sub with rating: #{table_row.css('.rating-cell span').text}"
-        download_zip("https://www.yifysubtitles.com" + table_row.css('.download-cell a').first['href'], folder_name)
+        download_zip("#{$SUBS_BASE_DOMAIN}" + table_row.css('a').first['href'], folder_name)
         downloaded = true
         break
       end
@@ -75,7 +79,7 @@ def download_zip(link, folder_name)
   doc = Nokogiri::HTML(open(link))
   
   File.open("./subtitle.zip", "wb") do |file|
-    file.write open(doc.css('a.btn-icon.download-subtitle').first['href']).read
+    file.write open("#{$SUBS_BASE_DOMAIN}" + doc.css('a.btn-icon.download-subtitle').first['href']).read
   end
   puts "Downloaded"
 
